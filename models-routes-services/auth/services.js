@@ -20,6 +20,7 @@ const { redisClient } = require('../../helper/redis')
 const UserModel = require('../user/model')
 const OtpModel = require('../otp/model')
 const RefreshTokenModel = require('../refreshToken/model')
+const GuestIdentityModel = require('./models/guestIdentity.model')
 
 const googleClient = new OAuth2Client(config.GOOGLE_CLIENT_ID)
 
@@ -28,6 +29,12 @@ const authServices = {}
 const msg = (req) => messages[req.userLanguage] || messages.English
 
 const otpSendKey = (email) => `otp:send:${email}`
+
+// Strip the IPv6-mapped-IPv4 prefix (e.g. "::ffff:127.0.0.1") so the same v4 address always maps to one sIp value
+const clientIp = (req) => {
+  const raw = req.ip || ''
+  return raw.startsWith('::ffff:') ? raw.slice(7) : raw
+}
 
 const assertActiveUser = (user, req, res) => {
   if (!user || user.eStatus !== eStatus.map.ACTIVE) {
@@ -279,14 +286,38 @@ authServices.googleLogin = async (req, res) => {
 
 authServices.guestLogin = async (req, res) => {
   try {
-    const guestSuffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
-    const user = await UserModel.create({
-      sName: `Guest_${guestSuffix}`,
-      eRole: eRole.map.GUEST,
-      eAuthProvider: eAuthProvider.map.GUEST,
-      eStatus: eStatus.map.ACTIVE,
-      dLastLogin: new Date()
-    })
+    const sIp = clientIp(req)
+    const now = new Date()
+    const dExpiresAt = new Date(now.getTime() + config.GUEST_IDENTITY_TTL_DAYS * 24 * 60 * 60 * 1000)
+
+    // Same IP within the TTL window reuses its existing guest identity instead of minting a new one
+    const identity = sIp ? await GuestIdentityModel.findOne({ sIp, dExpiresAt: { $gt: now } }) : null
+    let user = identity ? await UserModel.findOne({ _id: identity.iUserId, eStatus: eStatus.map.ACTIVE }) : null
+
+    if (user) {
+      user.dLastLogin = now
+      await user.save()
+      // Rolling window — an actively-used identity keeps extending instead of expiring mid-use
+      await GuestIdentityModel.updateOne({ _id: identity._id }, { dExpiresAt })
+    } else {
+      const guestSuffix = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+      user = await UserModel.create({
+        sName: `Guest_${guestSuffix}`,
+        eRole: eRole.map.GUEST,
+        eAuthProvider: eAuthProvider.map.GUEST,
+        eStatus: eStatus.map.ACTIVE,
+        dLastLogin: now
+      })
+
+      if (sIp) {
+        // upsert (not create): also reclaims the sIp row when the previous identity behind it was blocked/inactive
+        await GuestIdentityModel.findOneAndUpdate(
+          { sIp },
+          { iUserId: user._id, dExpiresAt },
+          { upsert: true }
+        )
+      }
+    }
 
     const accessToken = signGuestToken(buildUserPayload(user), config.GUEST_TOKEN_VALIDITY || '24h')
 

@@ -2,9 +2,11 @@ const thirdPartyCred = {
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
 
-  GUEST_TOKEN_VALIDITY: process.env.GUEST_TOKEN_VALIDITY || '24h',
+  GUEST_TOKEN_VALIDITY: process.env.GUEST_TOKEN_VALIDITY || '365d',
   GUEST_FREE_SCANS: parseInt(process.env.GUEST_FREE_SCANS || 1, 10),
   GUEST_SCAN_TTL: parseInt(process.env.GUEST_SCAN_TTL || 2592000, 10),
+  // How long a guest identity stays bound to an IP (rolling — refreshed on every /guest hit) before it's freed up for a new guest
+  GUEST_IDENTITY_TTL_DAYS: parseInt(process.env.GUEST_IDENTITY_TTL_DAYS || 365, 10),
 
   OTP_EXPIRY_MINUTES: parseInt(process.env.OTP_EXPIRY_MINUTES || 5, 10),
   OTP_MAX_SEND_PER_WINDOW: parseInt(process.env.OTP_MAX_SEND_PER_WINDOW || 5, 10),

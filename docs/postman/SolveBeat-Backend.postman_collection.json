@@ -316,6 +316,37 @@
           "response": []
         },
         {
+          "name": "List Scans",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Language",
+                "value": "en-us",
+                "description": "Optional — one of `hi`, `en-us`, `pt-br`. Defaults to English if omitted/unrecognized.",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scan/list?page=1&limit=20&eStatus=completed&search=example&sortBy=dCreatedAt&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scan", "list"],
+              "query": [
+                { "key": "page", "value": "1", "description": "optional — integer >= 1, default 1" },
+                { "key": "limit", "value": "20", "description": "optional — integer 1-100, default 20" },
+                { "key": "eStatus", "value": "completed", "description": "optional — one of queued/running/completed/partial/failed", "disabled": true },
+                { "key": "search", "value": "example", "description": "optional — case-insensitive substring match against sUrl", "disabled": true },
+                { "key": "dateFrom", "value": "2026-01-01T00:00:00.000Z", "description": "optional — ISO8601, filters dCreatedAt >=", "disabled": true },
+                { "key": "dateTo", "value": "2026-12-31T23:59:59.999Z", "description": "optional — ISO8601, filters dCreatedAt <=", "disabled": true },
+                { "key": "sortBy", "value": "dCreatedAt", "description": "optional — one of dCreatedAt/dFinishedAt/nOverall, default dCreatedAt", "disabled": true },
+                { "key": "sortOrder", "value": "desc", "description": "optional — asc/desc, default desc", "disabled": true }
+              ]
+            },
+            "description": "Requires `Authorization: Bearer {{accessToken}}` (inherited from the collection; guest tokens are allowed here). Returns a paginated history of the current user's own scans only — never another user's. Lightweight by design: no `oResults`/`oModules`/findings, just enough for a history list. Use **Scan Result** for the full report on a specific scan.\n\n| Field | Location | Type | Required | Notes |\n|---|---|---|---|---|\n| `page` | query | integer | *optional* | >= 1, default 1 |\n| `limit` | query | integer | *optional* | 1-100, default 20 |\n| `eStatus` | query | string | *optional* | one of queued/running/completed/partial/failed |\n| `search` | query | string | *optional* | substring match against sUrl, max 255 chars |\n| `dateFrom` / `dateTo` | query | ISO8601 date | *optional* | filters on dCreatedAt |\n| `sortBy` | query | string | *optional* | one of dCreatedAt/dFinishedAt/nOverall, default dCreatedAt |\n| `sortOrder` | query | string | *optional* | asc/desc, default desc |"
+          },
+          "response": []
+        },
+        {
           "name": "Scan Progress",
           "request": {
             "method": "GET",

@@ -56,7 +56,8 @@ const messages = {
     scan_in_progress: 'Scan is still in progress',
     scan_invalid_url: 'Invalid URL. Provide a valid http/https URL, domain, or IP address',
     scan_progress: 'Scan progress retrieved successfully',
-    scan_result: 'Scan result retrieved successfully'
+    scan_result: 'Scan result retrieved successfully',
+    scan_list: 'Scan list retrieved successfully'
   }
 }
 

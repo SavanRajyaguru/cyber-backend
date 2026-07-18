@@ -13,6 +13,9 @@ const path = require('path')
 // const { redisCacheGooseClient } = require('../helper/redis')
 
 module.exports = (app) => {
+  // Behind a reverse proxy/load balancer — trust the first hop's X-Forwarded-For so req.ip is the real client IP
+  app.set('trust proxy', 1)
+
   if (process.env.NODE_ENV === 'production') {
     Sentry.init({
       dsn: config.SENTRY_DSN,

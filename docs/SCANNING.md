@@ -44,6 +44,7 @@ Base path: `/api/scan`
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
 | `POST` | `/start` | Required | Start scan, return `scanId` |
+| `GET` | `/list` | Required | Paginated scan history for the current user |
 | `GET` | `/progress/:scanId` | Required | Progress %, status, `isFinished` |
 | `GET` | `/result/:scanId` | Required (**guests denied**) | Full report |
 
@@ -65,6 +66,35 @@ Base path: `/api/scan`
   }
 }
 ```
+
+### List — `GET /api/scan/list`
+
+Returns the current user's own scans only (scoped by `iUserId` from the JWT — never cross-user). All query params are optional.
+
+| Query param | Type | Default | Notes |
+|---|---|---|---|
+| `page` | integer ≥ 1 | `1` | |
+| `limit` | integer 1-100 | `20` | |
+| `eStatus` | one of `queued`/`running`/`completed`/`partial`/`failed` | — | Exact match |
+| `search` | string (max 255) | — | Case-insensitive substring match against `sUrl` |
+| `dateFrom` / `dateTo` | ISO8601 date | — | Filters on `dCreatedAt` |
+| `sortBy` | one of `dCreatedAt`/`dFinishedAt`/`nOverall` | `dCreatedAt` | Whitelisted — never a raw user-supplied Mongo field path |
+| `sortOrder` | `asc`/`desc` | `desc` | |
+
+```json
+{
+  "status": 200,
+  "message": "Scan list retrieved successfully",
+  "data": {
+    "scans": [
+      { "scanId": "...", "sUrl": "https://example.com", "status": "completed", "progress": 100, "isFinished": true, "nOverall": 57.1, "dCreatedAt": "...", "dFinishedAt": "..." }
+    ],
+    "pagination": { "page": 1, "limit": 20, "total": 1, "totalPages": 1 }
+  }
+}
+```
+
+Deliberately lightweight — no `oResults`/`oModules`/full findings, just enough for a history list. Use `/result/:scanId` for the full report on a specific scan.
 
 ### `isFinished` — the stop-polling signal
 
@@ -362,3 +392,4 @@ curl -X GET "http://localhost:5000/api/scan/result/SCAN_ID" \
 - Queue wiring: `models-routes-services/scan/queue/queue.service.js`
 - Overall repo layout: [CODE_STRUCTURE.md](./CODE_STRUCTURE.md)
 - Coding rules (naming, response pattern, scan-specific rules): [CODING_STANDARDS.md](./CODING_STANDARDS.md)
+- Known bugs/scoring-model issues found via real-scan validation, not yet fixed: [ENGINE_IMPROVEMENTS.md](./ENGINE_IMPROVEMENTS.md)
