@@ -7,10 +7,19 @@ const enums = {
     }
   },
   eRole: {
-    value: ['ADMIN', 'USER'],
+    value: ['ADMIN', 'USER', 'GUEST'],
     map: {
       ADMIN: 'ADMIN',
-      USER: 'USER'
+      USER: 'USER',
+      GUEST: 'GUEST'
+    }
+  },
+  eAuthProvider: {
+    value: ['EMAIL', 'GOOGLE', 'GUEST'],
+    map: {
+      EMAIL: 'EMAIL',
+      GOOGLE: 'GOOGLE',
+      GUEST: 'GUEST'
     }
   }
 }

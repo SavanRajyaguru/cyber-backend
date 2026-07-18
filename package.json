@@ -1,9 +1,11 @@
 {
   "name": "cyber-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "SolveBeat cybersecurity backend",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -15,7 +17,10 @@
     "async": "^3.2.6",
     "axios": "^1.18.1",
     "bcryptjs": "^3.0.3",
+    "body-parser": "^1.20.6",
     "bullmq": "^5.80.6",
+    "cheerio": "^1.2.0",
+    "compression": "^1.8.1",
     "cors": "^2.8.6",
     "crypto-js": "^4.2.0",
     "dotenv": "^17.4.2",
@@ -23,7 +28,9 @@
     "express": "^5.2.1",
     "express-fileupload": "^1.5.2",
     "express-validator": "^7.3.2",
+    "google-auth-library": "^10.9.0",
     "helmet": "^8.3.0",
+    "hpp": "^0.2.3",
     "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
     "moment": "^2.30.1",

@@ -126,13 +126,17 @@ SJi4Dm1LbgpnL6FLgwIDAQAB
 
   MAIL_TRANSPORTER: {
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: process.env.SMTP_PORT || 587,
+    port: parseInt(process.env.SMTP_PORT || 587, 10),
+    secure: String(process.env.SMTP_PORT || 587) === '465',
+    requireTLS: String(process.env.SMTP_PORT || 587) !== '465',
     auth: {
-      user: process.env.SMTP_USERNAME || 'pranav.kakadiya@yudizsolutions.com',
-      pass: process.env.SMTP_PASSWORD || 'afwefblhwejpwkvf'
+      // Gmail address (full email) + App Password (spaces optional)
+      user: process.env.SMTP_USERNAME || '',
+      pass: (process.env.SMTP_PASSWORD || '').replace(/\s+/g, '')
     }
   },
-  SMTP_FROM: process.env.SMTP_FROM || 'hello@fanziz.com',
+  // For Gmail, From must match the authenticated account
+  SMTP_FROM: process.env.SMTP_FROM || process.env.SMTP_USERNAME || 'noreply@solvebeat.com',
   READ_ARTICLE_TTL: process.env.READ_ARTICLE_TTL || 259200, // 3 days in seconds (60 * 60 * 24 * 3)
   READ_SHORTS_TTL: process.env.READ_SHORTS_TTL || 259200, // 3 days in seconds (60 * 60 * 24 * 3)
   READ_GAMES_TTL: process.env.READ_GAMES_TTL || 259200, // 3 days in seconds (60 * 60 * 24 * 3)

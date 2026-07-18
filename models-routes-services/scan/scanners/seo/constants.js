@@ -1,0 +1,67 @@
+const ERROR_CODES = Object.freeze({
+  TIMEOUT: 'TIMEOUT',
+  REDIRECT_LOOP: 'REDIRECT_LOOP',
+  DNS_FAILURE: 'DNS_FAILURE',
+  SSL_FAILURE: 'SSL_FAILURE',
+  CONNECTION_REFUSED: 'CONNECTION_REFUSED',
+  INVALID_URL: 'INVALID_URL',
+  INVALID_HTML: 'INVALID_HTML',
+  UNKNOWN: 'UNKNOWN'
+})
+
+const SEVERITY = Object.freeze({
+  HIGH: 'High',
+  MEDIUM: 'Medium',
+  LOW: 'Low',
+  INFO: 'Info'
+})
+
+const FINDING_STATUS = Object.freeze({
+  FAIL: 'Fail',
+  WARN: 'Warn',
+  PASS: 'Pass',
+  INFO: 'Info'
+})
+
+const SCORE_WEIGHTS = Object.freeze({
+  TITLE: 15,
+  DESCRIPTION: 15,
+  HEADINGS: 15,
+  IMAGES: 10,
+  STRUCTURED_DATA: 15,
+  SOCIAL: 10,
+  CANONICAL: 10,
+  ROBOTS: 10,
+  // Links share remaining — plan listed Links 10; weights sum to 110 in prompt.
+  // Normalize: keep Links at 10 and scale is applied in scoring to 100 max.
+  LINKS: 10
+})
+
+const TITLE_MIN = 30
+const TITLE_MAX = 60
+const DESC_MIN = 70
+const DESC_MAX = 160
+
+const DEFAULT_SEO_TIMEOUT_MS = 15000
+const DEFAULT_MAX_HTML_BYTES = 2 * 1024 * 1024
+const DEFAULT_LINK_CHECK_LIMIT = 15
+const DEFAULT_IMAGE_CHECK_LIMIT = 10
+const DEFAULT_CONCURRENCY = 5
+const DEFAULT_USER_AGENT = 'SolveBeatSeoScanner/1.0'
+
+module.exports = {
+  ERROR_CODES,
+  SEVERITY,
+  FINDING_STATUS,
+  SCORE_WEIGHTS,
+  TITLE_MIN,
+  TITLE_MAX,
+  DESC_MIN,
+  DESC_MAX,
+  DEFAULT_SEO_TIMEOUT_MS,
+  DEFAULT_MAX_HTML_BYTES,
+  DEFAULT_LINK_CHECK_LIMIT,
+  DEFAULT_IMAGE_CHECK_LIMIT,
+  DEFAULT_CONCURRENCY,
+  DEFAULT_USER_AGENT
+}

@@ -12,11 +12,14 @@ const dbVar = {
   SEO_REDIRECTION_DB_URL: process.env.SEO_REDIRECTION_DB_URL || 'mongodb://localhost:27017/seo_redirection',
 
   REDIS_HOST: process.env.REDIS_HOST || 'localhost',
+  REDIS_HOST_NAME: process.env.REDIS_HOST_NAME || process.env.REDIS_HOST || 'localhost',
   REDIS_PORT: process.env.REDIS_PORT || 6379,
   REDIS_PASSWORD: process.env.REDIS_PASSWORD || '',
   REDIS_USERNAME: process.env.REDIS_USERNAME || 'default',
   REDIS_CONNECTION_STRING: process.env.REDIS_CONNECTION_STRING || 'redis://localhost:6379',
   REDIS_DB: process.env.REDIS_DB || 3,
+  REDIS_MODE: process.env.REDIS_MODE || 'single',
+  USERS_DB_POOLSIZE: process.env.USERS_DB_POOLSIZE || 10,
 
   // SQL Database configuration variables
   DB_SQL_NAME: process.env.DB_SQL_NAME || 'test',

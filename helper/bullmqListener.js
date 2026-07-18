@@ -1,20 +1,4 @@
-if (process.env?.NODE_ENV === 'production') {
-  require('../models-routes-services/lingoArticle/worker')
-  require('../models-routes-services/queue/queue')
-  require('../models-routes-services/sitemap/worker')
-  require('../models-routes-services/liveLine/commentary/worker')
-  require('../models-routes-services/prediction/events/worker')
-  require('../models-routes-services/prediction/events/footBallWorker')
-  require('../models-routes-services/queue/notificationQueue')
-  require('../models-routes-services/feedArticalData/worker')
-  require('../models-routes-services/user/worker')
-  require('../models-routes-services/feedArticalData/articleSyncWorker')
-  require('../models-routes-services/Entertainment/content/descriptionWorker')
-  require('../models-routes-services/liveLine/matchCardImageWorker')
-  require('../models-routes-services/Entertainment/dispatch.worker')
-  require('../models-routes-services/Entertainment/movie.worker')
-  require('../models-routes-services/Entertainment/series.worker')
-  require('../models-routes-services/Entertainment/season.worker')
-  require('../models-routes-services/Entertainment/person.worker')
-}
-require('../helper/thiredpartySocket')
+// Register BullMQ workers for all environments (API process hosts workers).
+require('../models-routes-services/scan/queue/queue.service').startScanWorkers()
+
+module.exports = {}

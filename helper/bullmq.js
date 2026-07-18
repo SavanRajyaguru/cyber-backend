@@ -1,19 +1,40 @@
-const { Queue, Worker } = require('bullmq')
-const Redis = require('ioredis')
+const { Queue, Worker, FlowProducer } = require('bullmq')
 const config = require('../config/config')
 
-const connection = new Redis({
-  host: config.REDIS_HOST,
-  port: config.REDIS_PORT,
-  username: config.REDIS_USERNAME,
-  password: config.REDIS_PASSWORD,
-  maxRetriesPerRequest: null,
-  enableReadyCheck: false,
-  db: Number(config.REDIS_DB)
-})
+/**
+ * Connection OPTIONS (not a shared ioredis instance).
+ * BullMQ duplicates connections per Queue/Worker/FlowProducer.
+ * Sharing one Redis client between Workers (blocking BRPOP) and producers
+ * causes enqueue/start API to stall under load.
+ */
+const getRedisConnectionOptions = () => {
+  const opts = {
+    host: config.REDIS_HOST || 'localhost',
+    port: Number(config.REDIS_PORT) || 6379,
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+    db: Number(config.REDIS_DB) || 0
+  }
+
+  if (config.REDIS_PASSWORD) {
+    opts.password = config.REDIS_PASSWORD
+  }
+  if (config.REDIS_USERNAME && config.REDIS_PASSWORD) {
+    opts.username = config.REDIS_USERNAME
+  }
+
+  return opts
+}
+
+/** @deprecated Prefer getRedisConnectionOptions(); kept for callers expecting `connection`. */
+const connection = getRedisConnectionOptions()
+
+const createFlowProducer = () => {
+  return new FlowProducer({ connection: getRedisConnectionOptions() })
+}
 
 const createQueue = ({ sQueueName = '' }) => {
-  return new Queue(sQueueName, { connection })
+  return new Queue(sQueueName, { connection: getRedisConnectionOptions() })
 }
 
 const toBullJobId = (jobId) => {
@@ -60,13 +81,13 @@ const updateJobTTL = async ({ sKey, nTimeMS, oQueue }) => {
   return true
 }
 
-const subscribeQueue = ({ oQueue, config, callBack }) => {
+const subscribeQueue = ({ oQueue, config: workerConfig, callBack }) => {
   const queueMsg = `Subscribing data from queue '${oQueue.name
     }' || ${new Date().toLocaleDateString()}|${new Date().toLocaleTimeString()}`
   console.log(queueMsg)
   const worker = new Worker(
     oQueue.name,
-    async job => {
+    async (job) => {
       try {
         await callBack(job)
       } catch (error) {
@@ -80,20 +101,20 @@ const subscribeQueue = ({ oQueue, config, callBack }) => {
       }
     },
     {
-      connection,
-      ...config
+      connection: getRedisConnectionOptions(),
+      ...workerConfig
     }
   )
   return worker
 }
 
-const subscribeQueuePreserveError = ({ oQueue, config, callBack }) => {
+const subscribeQueuePreserveError = ({ oQueue, config: workerConfig, callBack }) => {
   const queueMsg = `Subscribing data from queue '${oQueue.name
     }' || ${new Date().toLocaleDateString()}|${new Date().toLocaleTimeString()}`
   console.log(queueMsg)
   const worker = new Worker(
     oQueue.name,
-    async job => {
+    async (job) => {
       try {
         await callBack(job)
       } catch (error) {
@@ -106,15 +127,18 @@ const subscribeQueuePreserveError = ({ oQueue, config, callBack }) => {
       }
     },
     {
-      connection,
-      ...config
+      connection: getRedisConnectionOptions(),
+      ...workerConfig
     }
   )
   return worker
 }
 
 module.exports = {
+  connection,
+  getRedisConnectionOptions,
   createQueue,
+  createFlowProducer,
   toBullJobId,
   addJob,
   deleteJob,

@@ -35,8 +35,10 @@ class RedisClient {
       let config = {
         host: this.host,
         port: this.port,
-        password: this.password,
         ...this.options
+      }
+      if (this.password) {
+        config.password = this.password
       }
       // Redis single instance Configuration
       redis = new Redis(config)

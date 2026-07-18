@@ -1,0 +1,92 @@
+const ERROR_CODES = Object.freeze({
+  TIMEOUT: 'TIMEOUT',
+  REDIRECT_LOOP: 'REDIRECT_LOOP',
+  DNS_FAILURE: 'DNS_FAILURE',
+  SSL_FAILURE: 'SSL_FAILURE',
+  CONNECTION_REFUSED: 'CONNECTION_REFUSED',
+  INVALID_URL: 'INVALID_URL',
+  INVALID_HTML: 'INVALID_HTML',
+  UNKNOWN: 'UNKNOWN'
+})
+
+const SEVERITY = Object.freeze({
+  HIGH: 'High',
+  MEDIUM: 'Medium',
+  LOW: 'Low',
+  INFO: 'Info'
+})
+
+const FINDING_STATUS = Object.freeze({
+  FAIL: 'Fail',
+  WARN: 'Warn',
+  PASS: 'Pass',
+  INFO: 'Info'
+})
+
+const SCORE_WEIGHTS = Object.freeze({
+  RESPONSE_TIME: 25,
+  COMPRESSION: 15,
+  CACHING: 15,
+  ASSETS: 20,
+  IMAGES: 15,
+  CSS_JS: 10
+})
+
+const RESOURCE_TYPES = Object.freeze({
+  CSS: 'css',
+  JAVASCRIPT: 'javascript',
+  IMAGE: 'image',
+  FONT: 'font',
+  VIDEO: 'video',
+  SVG: 'svg',
+  OTHER: 'other'
+})
+
+/** Timing thresholds (ms) */
+const TTFB_GOOD_MS = 200
+const TTFB_OK_MS = 600
+const TOTAL_GOOD_MS = 1000
+const TOTAL_OK_MS = 2500
+
+/** Size thresholds (bytes) */
+const LARGE_JS_BYTES = 500 * 1024
+const LARGE_CSS_BYTES = 200 * 1024
+const LARGE_IMAGE_BYTES = 200 * 1024
+const LARGE_FONT_BYTES = 100 * 1024
+
+const MAX_RESOURCES = 100
+const TOO_MANY_REQUESTS = 50
+const LARGE_DOM_ELEMENTS = 1500
+
+const DEFAULT_PERF_TIMEOUT_MS = 15000
+const DEFAULT_MAX_HTML_BYTES = 2 * 1024 * 1024
+const DEFAULT_MAX_RESOURCE_BYTES = 2 * 1024 * 1024
+const DEFAULT_CONCURRENCY = 5
+const DEFAULT_USER_AGENT = 'SolveBeatPerfScanner/1.0'
+
+const MODERN_IMAGE_EXTS = Object.freeze(['.webp', '.avif', '.svg'])
+
+module.exports = {
+  ERROR_CODES,
+  SEVERITY,
+  FINDING_STATUS,
+  SCORE_WEIGHTS,
+  RESOURCE_TYPES,
+  TTFB_GOOD_MS,
+  TTFB_OK_MS,
+  TOTAL_GOOD_MS,
+  TOTAL_OK_MS,
+  LARGE_JS_BYTES,
+  LARGE_CSS_BYTES,
+  LARGE_IMAGE_BYTES,
+  LARGE_FONT_BYTES,
+  MAX_RESOURCES,
+  TOO_MANY_REQUESTS,
+  LARGE_DOM_ELEMENTS,
+  DEFAULT_PERF_TIMEOUT_MS,
+  DEFAULT_MAX_HTML_BYTES,
+  DEFAULT_MAX_RESOURCE_BYTES,
+  DEFAULT_CONCURRENCY,
+  DEFAULT_USER_AGENT,
+  MODERN_IMAGE_EXTS
+}
