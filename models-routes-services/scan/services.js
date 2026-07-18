@@ -1,5 +1,5 @@
 const { status, jsonStatus, messages } = require('../../helper/api.responses')
-const { catchError, handleCatchError } = require('../../helper/utilities.services')
+const { catchError, ObjectId } = require('../../helper/utilities.services')
 const { normalizeAndValidateUrl } = require('./engine/validation.service')
 const runtimeService = require('./engine/runtime.service')
 const { toPublicReport, FINISHED_STATUSES } = require('./engine/merge.service')
@@ -35,8 +35,17 @@ scanServices.start = async (req, res) => {
       })
     }
 
-    const iUserId = req.user?._id || '123456'
-    const iSiteId = iUserId ? await upsertSiteForScan(iUserId, validated.sUrl) : null
+    // Must be a real Mongo ObjectId from JWT — never use fake fallbacks like "123456"
+    const iUserId = ObjectId(req.user?._id)
+    if (!iUserId) {
+      return res.status(status.Unauthorized).jsonp({
+        status: jsonStatus.Unauthorized,
+        message: msg(req).err_unauthorized,
+        errors: [{ msg: 'Valid authenticated user id is required to start a scan' }]
+      })
+    }
+
+    const iSiteId = await upsertSiteForScan(iUserId, validated.sUrl)
 
     const context = await runtimeService.createScanContext({
       sUrl: validated.sUrl,
