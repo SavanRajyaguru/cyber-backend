@@ -57,9 +57,6 @@ const SOURCE_MODULES = Object.freeze([
   'infrastructure'
 ])
 
-const DEFAULT_WAIT_MS = 45000
-const DEFAULT_POLL_MS = 500
-
 const RISK_LEVELS = Object.freeze({
   CRITICAL: 'critical',
   HIGH: 'high',
@@ -74,7 +71,5 @@ module.exports = {
   SEVERITY_WEIGHTS,
   THREAT_CATEGORIES,
   SOURCE_MODULES,
-  DEFAULT_WAIT_MS,
-  DEFAULT_POLL_MS,
   RISK_LEVELS
 }

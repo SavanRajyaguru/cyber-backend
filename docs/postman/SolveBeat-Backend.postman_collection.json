@@ -1,0 +1,363 @@
+{
+  "info": {
+    "_postman_id": "8f6a2f1e-4b7d-4e2a-9c1a-3f5d1e2a7c90",
+    "name": "SolveBeat Backend API",
+    "description": "API surface for `cyber-backend` (SolveBeat). Only routes actually mounted in `middlewares/routes.js` are included (`/api/auth`, `/api/scan`, `/api/health-check`).\n\n**How to read each request's fields:**\n- Every request description below has a table of fields with a **Required / Optional** column.\n- Each request also includes an annotated JSON snippet with `// required` / `// optional` comments for quick reference. That annotated snippet is for reading only — the actual **Body** tab of each request is valid, sendable JSON (comments are not valid JSON, so they live in the description, not in the body you send).\n- Optional headers (e.g. `Language`) are added but left **disabled** — enable them if you want to use that feature.\n\n**Variables** (see collection Variables tab):\n- `baseUrl` — defaults to `http://localhost:5000` (see `.env` → `PORT`)\n- `accessToken` / `refreshToken` — populated automatically by the test scripts on Send OTP → Verify OTP, Google Login, Guest Login, and Refresh Token\n- `scanId` — populated automatically by the test script on Start Scan\n\nAuth: this collection sets a collection-level Bearer token using `{{accessToken}}`. Requests that don't need auth (Send OTP, Verify OTP, Google Login, Guest Login, Refresh Token, Health Check) override this with `No Auth`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{accessToken}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" },
+    { "key": "scanId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "GET",
+        "header": [
+          {
+            "key": "Language",
+            "value": "en-us",
+            "description": "Optional — one of `hi`, `en-us`, `pt-br`. Defaults to English if omitted/unrecognized.",
+            "disabled": true
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/health-check",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health-check"]
+        },
+        "description": "No auth, no body. Confirms the API is up.\n\n| Field | Type | Required | Notes |\n|---|---|---|---|\n| _(none)_ | | | This endpoint takes no input |"
+      },
+      "response": []
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Send OTP",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Language",
+                "value": "en-us",
+                "description": "Optional — one of `hi`, `en-us`, `pt-br`. Defaults to English if omitted/unrecognized.",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sEmail\": \"user@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/send-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "send-otp"]
+            },
+            "description": "Sends a one-time OTP to the given email (login or first-time signup). Rate limited via `OTP_MAX_SEND_PER_WINDOW` per `OTP_SEND_WINDOW_MINUTES` (see `.env.example`). If `ENABLE_STATIC_OTP=true` and not in production, the static `STATIC_OTP` value is used instead of a random one.\n\n| Field | Type | Required | Notes |\n|---|---|---|---|\n| `sEmail` | string | **required** | Must be a valid email; trimmed + lowercased server-side |\n\nAnnotated reference (not the literal sendable body — see Body tab for that):\n```jsonc\n{\n  \"sEmail\": \"user@example.com\" // required — valid email address\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json?.data?.accessToken) pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "    if (json?.data?.refreshToken) pm.collectionVariables.set('refreshToken', json.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Language",
+                "value": "en-us",
+                "description": "Optional — one of `hi`, `en-us`, `pt-br`. Defaults to English if omitted/unrecognized.",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sEmail\": \"user@example.com\",\n  \"sOtp\": \"123456\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "verify-otp"]
+            },
+            "description": "Verifies the OTP sent via **Send OTP**, creates the user on first success, and returns an access/refresh token pair. On success this request's test script saves `accessToken`/`refreshToken` as collection variables automatically.\n\n| Field | Type | Required | Notes |\n|---|---|---|---|\n| `sEmail` | string | **required** | Must match the email Send OTP was called with |\n| `sOtp` | string | **required** | Exactly 6 numeric digits |\n\nAnnotated reference (not the literal sendable body — see Body tab for that):\n```jsonc\n{\n  \"sEmail\": \"user@example.com\", // required — valid email address\n  \"sOtp\": \"123456\"              // required — 6-digit numeric OTP\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Google Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json?.data?.accessToken) pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "    if (json?.data?.refreshToken) pm.collectionVariables.set('refreshToken', json.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Language",
+                "value": "en-us",
+                "description": "Optional — one of `hi`, `en-us`, `pt-br`. Defaults to English if omitted/unrecognized.",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"<google-id-token>\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/google",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "google"]
+            },
+            "description": "Logs in / signs up via a Google Sign-In ID token (verified server-side against `GOOGLE_CLIENT_ID`). On success this request's test script saves `accessToken`/`refreshToken` as collection variables automatically.\n\n| Field | Type | Required | Notes |\n|---|---|---|---|\n| `idToken` | string | **required** | ID token from Google Sign-In on the client (not an access token) |\n\nAnnotated reference (not the literal sendable body — see Body tab for that):\n```jsonc\n{\n  \"idToken\": \"<google-id-token>\" // required — Google-issued ID token\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Guest Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json?.data?.accessToken) pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Language",
+                "value": "en-us",
+                "description": "Optional — one of `hi`, `en-us`, `pt-br`. Defaults to English if omitted/unrecognized.",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/guest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "guest"]
+            },
+            "description": "Creates a temporary guest user and returns a short-lived access token (validity via `GUEST_TOKEN_VALIDITY`, default `24h`). Guests can start/poll scans but are denied full result download and refresh-token issuance. On success this request's test script saves `accessToken` as a collection variable automatically.\n\n| Field | Type | Required | Notes |\n|---|---|---|---|\n| _(none)_ | | | This endpoint takes no body — send `{}` or an empty body |"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json?.data?.accessToken) pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "    if (json?.data?.refreshToken) pm.collectionVariables.set('refreshToken', json.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Language",
+                "value": "en-us",
+                "description": "Optional — one of `hi`, `en-us`, `pt-br`. Defaults to English if omitted/unrecognized.",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Exchanges a valid, stored refresh token for a new access/refresh token pair (rotates the old one). Rejected for guest accounts. On success this request's test script updates `accessToken`/`refreshToken` collection variables automatically.\n\n| Field | Type | Required | Notes |\n|---|---|---|---|\n| `refreshToken` | string | **required** | Must be a token previously issued and still stored/unexpired |\n\nAnnotated reference (not the literal sendable body — see Body tab for that):\n```jsonc\n{\n  \"refreshToken\": \"...\" // required — a previously issued, still-valid refresh token\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Language",
+                "value": "en-us",
+                "description": "Optional — one of `hi`, `en-us`, `pt-br`. Defaults to English if omitted/unrecognized.",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Requires `Authorization: Bearer {{accessToken}}` (inherited from the collection). Deletes stored refresh token(s) for the current user.\n\n| Field | Type | Required | Notes |\n|---|---|---|---|\n| `refreshToken` | string | *optional* | If provided, only that session is revoked. If omitted, **all** refresh tokens for the user are revoked |\n\nAnnotated reference (not the literal sendable body — see Body tab for that):\n```jsonc\n{\n  // \"refreshToken\": \"...\" // optional — omit to revoke every session instead of just one\n}\n```\n\nTo revoke a single session, add the field to the Body tab, e.g. `{ \"refreshToken\": \"{{refreshToken}}\" }`."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Scan",
+      "item": [
+        {
+          "name": "Start Scan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json?.data?.scanId) pm.collectionVariables.set('scanId', json.data.scanId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              {
+                "key": "Language",
+                "value": "en-us",
+                "description": "Optional — one of `hi`, `en-us`, `pt-br`. Defaults to English if omitted/unrecognized.",
+                "disabled": true
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sUrl\": \"https://example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/scan/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scan", "start"]
+            },
+            "description": "Requires `Authorization: Bearer {{accessToken}}` (inherited from the collection; guest tokens are allowed here). Returns a `scanId` immediately — the 11 scanner modules then run in the background (see `docs/SCANNING.md`). This request's test script saves `scanId` as a collection variable automatically.\n\n| Field | Type | Required | Notes |\n|---|---|---|---|\n| `sUrl` | string | **required** | http/https URL, domain, or IPv4; max 2048 chars |\n\nAnnotated reference (not the literal sendable body — see Body tab for that):\n```jsonc\n{\n  \"sUrl\": \"https://example.com\" // required — http/https URL, domain, or IPv4\n}\n```"
+          },
+          "response": []
+        },
+        {
+          "name": "Scan Progress",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Language",
+                "value": "en-us",
+                "description": "Optional — one of `hi`, `en-us`, `pt-br`. Defaults to English if omitted/unrecognized.",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scan/progress/{{scanId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scan", "progress", "{{scanId}}"]
+            },
+            "description": "Requires `Authorization: Bearer {{accessToken}}` (inherited from the collection; guest tokens are allowed here). Returns `{ scanId, status, progress, isFinished }`. Poll this until `data.isFinished` is `true`, then call Scan Result once — no need to guess from `status`/`progress` alone. No request body — the scan is identified entirely by the URL path parameter.\n\n| Field | Location | Type | Required | Notes |\n|---|---|---|---|---|\n| `scanId` | URL path | string (UUID) | **required** | Returned by Start Scan; auto-filled from the `{{scanId}}` collection variable |"
+          },
+          "response": []
+        },
+        {
+          "name": "Scan Result",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Language",
+                "value": "en-us",
+                "description": "Optional — one of `hi`, `en-us`, `pt-br`. Defaults to English if omitted/unrecognized.",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scan/result/{{scanId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "scan", "result", "{{scanId}}"]
+            },
+            "description": "Requires `Authorization: Bearer {{accessToken}}` (inherited from the collection). **Guest tokens are rejected here** — only registered users can download the full result. Returns HTTP 202 with `{ ..., isFinished: false }` if the scan isn't finished yet, or the full public report (including `isFinished: true`, `oResults`, `oScores`, `oModules`) once `completed` / `partial` / `failed`. No request body — the scan is identified entirely by the URL path parameter.\n\n| Field | Location | Type | Required | Notes |\n|---|---|---|---|---|\n| `scanId` | URL path | string (UUID) | **required** | Returned by Start Scan; auto-filled from the `{{scanId}}` collection variable |"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

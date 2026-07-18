@@ -12,9 +12,11 @@ const thirdPartyCred = {
   OTP_MAX_VERIFY_ATTEMPTS: parseInt(process.env.OTP_MAX_VERIFY_ATTEMPTS || 5, 10),
 
   SCAN_MODULE_TIMEOUT_MS: parseInt(process.env.SCAN_MODULE_TIMEOUT_MS || 30000, 10),
+  SCAN_MODULE_MAX_ATTEMPTS: parseInt(process.env.SCAN_MODULE_MAX_ATTEMPTS || 3, 10),
+  SCAN_MODULE_RETRY_BACKOFF_MS: parseInt(process.env.SCAN_MODULE_RETRY_BACKOFF_MS || 2000, 10),
   SCAN_WORKER_CONCURRENCY: parseInt(process.env.SCAN_WORKER_CONCURRENCY || 5, 10),
   SCAN_PARENT_CONCURRENCY: parseInt(process.env.SCAN_PARENT_CONCURRENCY || 2, 10),
-  SCAN_CONTEXT_TTL_MS: parseInt(process.env.SCAN_CONTEXT_TTL_MS || 600000, 10),
+  DEBUG_LOG: process.env.DEBUG_LOG === 'true',
   SCAN_HTTP_TIMEOUT_MS: parseInt(process.env.SCAN_HTTP_TIMEOUT_MS || 15000, 10),
   SCAN_HTTP_MAX_REDIRECTS: parseInt(process.env.SCAN_HTTP_MAX_REDIRECTS || 5, 10),
   SCAN_HTTP_USER_AGENT: process.env.SCAN_HTTP_USER_AGENT || 'SolveBeatHeaderScanner/1.0',
@@ -48,11 +50,8 @@ const thirdPartyCred = {
   SCAN_PERF_MAX_RESOURCES: parseInt(process.env.SCAN_PERF_MAX_RESOURCES || 100, 10),
   SCAN_PERF_CONCURRENCY: parseInt(process.env.SCAN_PERF_CONCURRENCY || 5, 10),
   SCAN_PERF_USER_AGENT: process.env.SCAN_PERF_USER_AGENT || 'SolveBeatPerfScanner/1.0',
-  SCAN_INFRA_WAIT_MS: parseInt(process.env.SCAN_INFRA_WAIT_MS || 20000, 10),
   SCAN_INFRA_TIMEOUT_MS: parseInt(process.env.SCAN_INFRA_TIMEOUT_MS || 10000, 10),
   SCAN_INFRA_USER_AGENT: process.env.SCAN_INFRA_USER_AGENT || 'SolveBeatInfraScanner/1.0',
-  SCAN_THREAT_WAIT_MS: parseInt(process.env.SCAN_THREAT_WAIT_MS || 45000, 10),
-  SCAN_COMPLIANCE_WAIT_MS: parseInt(process.env.SCAN_COMPLIANCE_WAIT_MS || 60000, 10),
 
   SENTRY_DSN: process.env.SENTRY_DSN || ''
 }

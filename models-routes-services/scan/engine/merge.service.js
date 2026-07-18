@@ -1,24 +1,41 @@
+const ScanModel = require('../models/scan.model')
+const ScanModuleResultModel = require('../models/scanModuleResult.model')
 const { SCAN_STATUS, MODULE_STATUS } = require('../constants')
 const { applyScores } = require('./score.service')
 
-const mergeScanResults = (context) => {
-  const oResults = {}
-  const aErrors = []
+const FINISHED_STATUSES = [SCAN_STATUS.COMPLETED, SCAN_STATUS.PARTIAL, SCAN_STATUS.FAILED]
 
-  for (const [sModule, slot] of Object.entries(context.oModules || {})) {
-    if (slot?.oResult) {
-      oResults[sModule] = slot.oResult
-    }
-    if (slot?.sError) {
-      aErrors.push({ sModule, sMessage: slot.sError })
+/** Builds the `{ sModule: { eStatus, oResult, sError, nScore, dFinishedAt } }` shape from module docs. */
+const buildOModules = (moduleDocs) => {
+  const oModules = {}
+  for (const doc of moduleDocs) {
+    oModules[doc.sModule] = {
+      eStatus: doc.eStatus,
+      oResult: doc.oResult,
+      sError: doc.sError,
+      nScore: doc.nScore,
+      dFinishedAt: doc.dFinishedAt
     }
   }
+  return oModules
+}
 
-  applyScores(context)
-  context.oResults = oResults
-  context.aErrors = aErrors
+/**
+ * Runs once all 11 modules have reached a terminal state (scan-finalize).
+ * Scores the scan and writes its final status — does not touch the
+ * already-correct per-module ScanModuleResult docs.
+ */
+const mergeScanResults = async (scanId) => {
+  const moduleDocs = await ScanModuleResultModel.find({ scanId }).lean()
+  const oModules = buildOModules(moduleDocs)
 
-  const moduleStatuses = Object.values(context.oModules || {}).map((m) => m.eStatus)
+  const { oScores } = applyScores({ oModules })
+
+  const aErrors = moduleDocs
+    .filter((doc) => doc.sError)
+    .map((doc) => ({ sModule: doc.sModule, sMessage: doc.sError }))
+
+  const moduleStatuses = moduleDocs.map((doc) => doc.eStatus)
   const allFailed = moduleStatuses.length > 0 && moduleStatuses.every((s) =>
     s === MODULE_STATUS.FAILED || s === MODULE_STATUS.TIMEOUT
   )
@@ -26,33 +43,58 @@ const mergeScanResults = (context) => {
     s === MODULE_STATUS.FAILED || s === MODULE_STATUS.TIMEOUT
   )
 
-  if (allFailed) {
-    context.eStatus = SCAN_STATUS.FAILED
-  } else if (anyFailed) {
-    context.eStatus = SCAN_STATUS.PARTIAL
-  } else {
-    context.eStatus = SCAN_STATUS.COMPLETED
-  }
+  const eStatus = allFailed ? SCAN_STATUS.FAILED : anyFailed ? SCAN_STATUS.PARTIAL : SCAN_STATUS.COMPLETED
 
-  context.nProgress = 100
-  context.dFinishedAt = new Date()
-  return context
+  await ScanModel.updateOne(
+    { scanId },
+    {
+      $set: {
+        eStatus,
+        nProgress: 100,
+        dFinishedAt: new Date(),
+        oScores,
+        aErrors
+      }
+    }
+  )
+
+  const oModuleStatuses = {}
+  for (const doc of moduleDocs) oModuleStatuses[doc.sModule] = doc.eStatus
+
+  return { eStatus, oScores, oModuleStatuses }
 }
 
-const toPublicReport = (context) => ({
-  scanId: context.scanId,
-  sUrl: context.sUrl,
-  eStatus: context.eStatus,
-  nProgress: context.nProgress,
-  dCreatedAt: context.dCreatedAt,
-  dFinishedAt: context.dFinishedAt,
-  oResults: context.oResults,
-  oScores: context.oScores,
-  oModules: context.oModules,
-  aErrors: context.aErrors
-})
+/** Assembles the full public report for GET /scan/result/:scanId. */
+const toPublicReport = async (scanId) => {
+  const [scanDoc, moduleDocs] = await Promise.all([
+    ScanModel.findOne({ scanId }).lean(),
+    ScanModuleResultModel.find({ scanId }).lean()
+  ])
+  if (!scanDoc) return null
+
+  const oModules = buildOModules(moduleDocs)
+  const oResults = {}
+  for (const [sModule, slot] of Object.entries(oModules)) {
+    if (slot.oResult) oResults[sModule] = slot.oResult
+  }
+
+  return {
+    scanId: scanDoc.scanId,
+    sUrl: scanDoc.sUrl,
+    eStatus: scanDoc.eStatus,
+    nProgress: scanDoc.nProgress,
+    isFinished: FINISHED_STATUSES.includes(scanDoc.eStatus),
+    dCreatedAt: scanDoc.dCreatedAt,
+    dFinishedAt: scanDoc.dFinishedAt,
+    oResults,
+    oScores: scanDoc.oScores,
+    oModules,
+    aErrors: scanDoc.aErrors
+  }
+}
 
 module.exports = {
   mergeScanResults,
-  toPublicReport
+  toPublicReport,
+  FINISHED_STATUSES
 }

@@ -1,7 +1,7 @@
 const { normalizeAndValidateUrl } = require('../../../engine/validation.service')
 const { MODULE_STATUS } = require('../../../constants')
-const { ERROR_CODES } = require('../constants')
-const { collectSiblingResults } = require('./context.collector')
+const { ERROR_CODES, SOURCE_MODULES } = require('../constants')
+const { getSiblingResults } = require('../../../engine/siblingResults.service')
 const { detectProviders } = require('./provider.service')
 const {
   fallbackResolveAddresses,
@@ -46,14 +46,13 @@ const runInfrastructureScan = async ({ sUrl, scanId = null }) => {
   // 1) Collect existing scanner outputs (wait for parallel siblings)
   let collected
   try {
-    collected = await collectSiblingResults(scanId)
+    collected = await getSiblingResults(scanId, SOURCE_MODULES)
     log('Sources Collected', {
       available: collected.available,
-      waitedMs: collected.waitedMs,
       statuses: collected.statuses
     })
   } catch (error) {
-    log('Context collect soft-failed', { message: error?.message })
+    log('Sibling results read failed', { message: error?.message })
     collected = {
       sources: {
         header: null,

@@ -41,12 +41,20 @@ const request = (method, path, body, headers = {}) => new Promise((resolve, reje
   const scanId = start.body?.data?.scanId
   if (!scanId) process.exit(1)
 
-  await new Promise((r) => setTimeout(r, 5000))
+  let progress
+  const deadline = Date.now() + 60000
+  do {
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+    progress = await request('GET', `/api/scan/progress/${scanId}`, null, {
+      Authorization: `Bearer ${guestToken}`
+    })
+    console.log('progress', progress.status, JSON.stringify(progress.body))
+  } while (!progress.body?.data?.isFinished && Date.now() < deadline)
 
-  const progress = await request('GET', `/api/scan/progress/${scanId}`, null, {
-    Authorization: `Bearer ${guestToken}`
-  })
-  console.log('progress', progress.status, JSON.stringify(progress.body))
+  if (!progress.body?.data?.isFinished) {
+    console.error('Timed out waiting for isFinished')
+    process.exit(1)
+  }
 
   // Result requires non-guest (denyGuest)
   const userToken = jwt.sign(

@@ -42,9 +42,6 @@ const SOURCE_MODULES = Object.freeze([
   'threat'
 ])
 
-const DEFAULT_WAIT_MS = 60000
-const DEFAULT_POLL_MS = 500
-
 /** Fail severity → score penalty */
 const FAIL_PENALTIES = Object.freeze({
   [SEVERITY.CRITICAL]: 25,
@@ -60,7 +57,5 @@ module.exports = {
   SEVERITY,
   FRAMEWORK_IDS,
   SOURCE_MODULES,
-  DEFAULT_WAIT_MS,
-  DEFAULT_POLL_MS,
   FAIL_PENALTIES
 }
