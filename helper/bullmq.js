@@ -1,30 +1,14 @@
 const { Queue, Worker, FlowProducer } = require('bullmq')
-const config = require('../config/config')
+const { getRedisConnectionOptions } = require('./redisConnection')
 
 /**
  * Connection OPTIONS (not a shared ioredis instance).
  * BullMQ duplicates connections per Queue/Worker/FlowProducer.
  * Sharing one Redis client between Workers (blocking BRPOP) and producers
  * causes enqueue/start API to stall under load.
+ *
+ * Configure via REDIS_CONNECTION_STRING (preferred) or REDIS_HOST / PORT / PASSWORD.
  */
-const getRedisConnectionOptions = () => {
-  const opts = {
-    host: config.REDIS_HOST || 'localhost',
-    port: Number(config.REDIS_PORT) || 6379,
-    maxRetriesPerRequest: null,
-    enableReadyCheck: false,
-    db: Number(config.REDIS_DB) || 0
-  }
-
-  if (config.REDIS_PASSWORD) {
-    opts.password = config.REDIS_PASSWORD
-  }
-  if (config.REDIS_USERNAME && config.REDIS_PASSWORD) {
-    opts.username = config.REDIS_USERNAME
-  }
-
-  return opts
-}
 
 /** @deprecated Prefer getRedisConnectionOptions(); kept for callers expecting `connection`. */
 const connection = getRedisConnectionOptions()

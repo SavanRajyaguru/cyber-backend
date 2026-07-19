@@ -1,10 +1,10 @@
 require('dotenv').config()
 const express = require('express')
 const path = require('path')
-const http = require('http')
+// const http = require('http')
 const config = require('./config/config')
 const app = express()
-const server = http.createServer(app)
+// const server = http.createServer(app)
 
 global.appRootPath = __dirname
 
@@ -41,6 +41,8 @@ require('./middlewares/routes')(app)
 
 require('./helper/bullmqListener')
 
-server.listen(config.PORT || 3000, () => {
+app.listen(config.PORT || 3000, () => {
   console.log(`Server is running on port: ${config.PORT || 3000}`)
 })
+
+module.exports = app

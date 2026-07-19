@@ -1,46 +1,43 @@
 const Redis = require('ioredis')
-const config = require('../config/config')
+const { getRedisClientArgs } = require('./redisConnection')
+
 class RedisClient {
-  constructor(name, host, port, password, mode = 'single', options = {}) {
+  constructor(name, args) {
     this.name = name
-    this.password = password
-    this.host = host
-    this.port = port
-    this.mode = mode
-    this.options = options
+    this.args = args
   }
 
   connect = () => {
     let redis = null
-    if (this.mode === 'cluster') {
-      // cluster Configuration
-      let hosts = []
-      this.host?.split(',').forEach(host => {
+    const { args } = this
+
+    if (args.type === 'url') {
+      redis = new Redis(args.url, args.options || {})
+    } else if (args.mode === 'cluster') {
+      const hosts = []
+      args.host?.split(',').forEach((host) => {
         const parts = host.split(':')
         hosts.push({
-          host: parts[0] || this.host,
-          port: parts[1] || this.port
+          host: parts[0] || args.host,
+          port: parts[1] || args.port
         })
       })
 
-      let config = {
+      redis = new Redis.Cluster(hosts, {
         redisOptions: {
-          password: this.password,
-        },
-        ...this.options
-      }
-
-      redis = new Redis.Cluster(hosts, config)
+          password: args.password || undefined,
+          ...(args.options || {})
+        }
+      })
     } else {
-      let config = {
-        host: this.host,
-        port: this.port,
-        ...this.options
+      const config = {
+        host: args.host,
+        port: args.port,
+        ...(args.options || {})
       }
-      if (this.password) {
-        config.password = this.password
+      if (args.password) {
+        config.password = args.password
       }
-      // Redis single instance Configuration
       redis = new Redis(config)
     }
 
@@ -63,7 +60,6 @@ class RedisClient {
   }
 }
 
-
-const redisClient = new RedisClient('Redis', config.REDIS_HOST_NAME, config.REDIS_PORT, config.REDIS_PASSWORD, config.REDIS_MODE).connect()
+const redisClient = new RedisClient('Redis', getRedisClientArgs()).connect()
 
 module.exports = { redisClient }
