@@ -42,7 +42,7 @@ require('./middlewares/routes')(app)
 require('./helper/bullmqListener')
 
 app.listen(config.PORT || 3000, () => {
-  console.log(`Server is running on port: ${config.PORT || 3000}`)
+  console.log(`> Server is running on port: ${config.PORT || 3000}`)
 })
 
 module.exports = app
