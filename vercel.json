@@ -1,8 +1,7 @@
 {
     "version": 2,
     "regions": [
-        "lhr1",
-        "bom1"
+        "lhr1"
     ],
     "builds": [
         {
