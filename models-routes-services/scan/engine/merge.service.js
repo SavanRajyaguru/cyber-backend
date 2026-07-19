@@ -1,9 +1,33 @@
 const ScanModel = require('../models/scan.model')
 const ScanModuleResultModel = require('../models/scanModuleResult.model')
-const { SCAN_STATUS, MODULE_STATUS } = require('../constants')
+const { SCAN_MODULES, SCAN_STATUS, MODULE_STATUS } = require('../constants')
 const { applyScores } = require('./score.service')
 
 const FINISHED_STATUSES = [SCAN_STATUS.COMPLETED, SCAN_STATUS.PARTIAL, SCAN_STATUS.FAILED]
+
+/**
+ * Per-module status list for GET /scan/progress/:scanId — ordered by SCAN_MODULES
+ * (phase 1 then phase 2) so the frontend can render it directly without sorting.
+ * Modules that haven't been picked up by a worker yet still appear as `pending`
+ * (rows are pre-created for all 11 modules in runtime.service.createScanContext).
+ */
+const getModuleStatusList = async (scanId) => {
+  const moduleDocs = await ScanModuleResultModel.find({ scanId }).lean()
+  const docsByModule = {}
+  for (const doc of moduleDocs) docsByModule[doc.sModule] = doc
+
+  return SCAN_MODULES.map((sModule) => {
+    const doc = docsByModule[sModule]
+    return {
+      processId: sModule,
+      status: doc?.eStatus || MODULE_STATUS.PENDING,
+      nScore: doc?.nScore ?? null,
+      dStartedAt: doc?.dStartedAt || null,
+      dFinishedAt: doc?.dFinishedAt || null,
+      sError: doc?.sError || null
+    }
+  })
+}
 
 /** Builds the `{ sModule: { eStatus, oResult, sError, nScore, dFinishedAt } }` shape from module docs. */
 const buildOModules = (moduleDocs) => {
@@ -96,5 +120,6 @@ const toPublicReport = async (scanId) => {
 module.exports = {
   mergeScanResults,
   toPublicReport,
+  getModuleStatusList,
   FINISHED_STATUSES
 }

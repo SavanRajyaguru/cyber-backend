@@ -2,7 +2,7 @@ const { status, jsonStatus, messages } = require('../../helper/api.responses')
 const { catchError, handleCatchError, ObjectId } = require('../../helper/utilities.services')
 const { normalizeAndValidateUrl } = require('./engine/validation.service')
 const runtimeService = require('./engine/runtime.service')
-const { toPublicReport, FINISHED_STATUSES } = require('./engine/merge.service')
+const { toPublicReport, FINISHED_STATUSES, getModuleStatusList } = require('./engine/merge.service')
 const { enqueueScanFlowAsync } = require('./queue/queue.service')
 const SiteModel = require('./models/site.model')
 const ScanModel = require('./models/scan.model')
@@ -178,6 +178,8 @@ scanServices.progress = async (req, res) => {
       })
     }
 
+    const oResult = await getModuleStatusList(req.params.scanId)
+
     return res.status(status.OK).jsonp({
       status: jsonStatus.OK,
       message: msg(req).scan_progress,
@@ -185,7 +187,8 @@ scanServices.progress = async (req, res) => {
         scanId: context.scanId,
         status: context.eStatus,
         progress: context.nProgress,
-        isFinished: FINISHED_STATUSES.includes(context.eStatus)
+        isFinished: FINISHED_STATUSES.includes(context.eStatus),
+        oResult
       }
     })
   } catch (error) {
